@@ -182,11 +182,28 @@ Enquanto o app estiver em modo desenvolvimento:
 3. Custo: por mensagem template entregue (varia por país, ~R$0,05-0,15 por mensagem no Brasil)
 4. Para alertas de glicose a cada 5 min com cooldown de 20 min, o custo mensal será muito baixo
 
-### 8. Testar
+### 8. Testar conexão
+
+Rode o script de validação para enviar uma mensagem de teste para o seu próprio número:
 
 ```bash
-# Validar que tudo funciona
 source .venv/bin/activate
+python validate_whatsapp.py
+```
+
+O script vai:
+1. Carregar a configuração do `config.yaml`
+2. Validar que todos os campos estão preenchidos
+3. Enviar uma mensagem de teste via template para o `recipient` configurado
+4. Mostrar `SUCCESS` se a mensagem foi enviada, ou `FAILURE` com dicas de debug
+
+> **Dica:** Coloque seu próprio número como `recipient` para receber a mensagem de teste.
+
+### 9. Validar sistema completo
+
+Após o teste do WhatsApp, valide o fluxo completo:
+
+```bash
 python -m src.main
 ```
 
@@ -234,7 +251,8 @@ glucose-actions/
 ├── config.example.yaml       # Template de configuração
 ├── config.yaml               # Sua configuração (não commitado)
 ├── requirements.txt           # Dependências Python
-├── validate_lib.py            # Script de validação (Phase 0)
+├── validate_lib.py            # Validação da conexão LibreLinkUp (Phase 0)
+├── validate_whatsapp.py       # Validação da conexão WhatsApp Cloud API
 ├── src/
 │   ├── __init__.py
 │   ├── main.py                # Entry point — orquestra read → evaluate → alert
