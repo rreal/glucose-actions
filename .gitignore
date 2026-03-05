@@ -1,0 +1,12 @@
+config.yaml
+state.json
+.venv/
+__pycache__/
+*.pyc
+*.log
+.pytest_cache/
+
+# BMAD framework and tooling
+_bmad/
+_bmad-output/
+.claude/

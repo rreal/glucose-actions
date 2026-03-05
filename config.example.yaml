@@ -1,0 +1,37 @@
+# Glucose Actions - Configuration
+# Copy this file to config.yaml and fill in your values:
+#   cp config.example.yaml config.yaml
+#   chmod 600 config.yaml
+
+librelinkup:
+  # Credentials can also be set via env vars: LIBRELINKUP_EMAIL, LIBRELINKUP_PASSWORD
+  email: "your-email@example.com"
+  password: "your-password"
+
+alerts:
+  low_threshold: 70        # mg/dL - below this triggers low alert
+  high_threshold: 180      # mg/dL - above this triggers high alert
+  cooldown_minutes: 20     # minutes between repeated alerts for same level
+  max_reading_age_minutes: 15  # ignore readings older than this
+
+outputs:
+  - type: webhook
+    enabled: false
+    url: ""                # e.g. https://api-v2.voicemonkey.io/announcement
+    token: ""
+    device: ""
+
+  - type: whatsapp
+    enabled: false
+    phone_number_id: ""    # from Meta Business Manager > WhatsApp > Phone Numbers
+    access_token: ""       # or set WHATSAPP_ACCESS_TOKEN env var (recommended)
+    recipient: ""          # recipient phone with country code, e.g. 5511999999999
+    template_name: "glucose_alert"  # approved template with one body parameter {{1}}
+    language_code: "pt_BR"
+
+logging:
+  level: "INFO"            # DEBUG, INFO, WARNING, ERROR
+  file: ""                 # empty = stdout only
+
+state_file: "state.json"
+lock_file: "/tmp/glucose-actions.lock"
