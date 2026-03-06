@@ -124,15 +124,30 @@ outputs:
 4. Dê um nome (ex: "Glucose Monitor") e vincule à sua conta business
 5. No painel do app, clique **Adicionar produto** e selecione **WhatsApp**
 
-### 3. Configurar número de telefone
+### 3. Configurar número de telefone (remetente)
+
+> **Importante:** O número **remetente** (que envia os alertas) não pode estar ativo no WhatsApp pessoal ou WhatsApp Business app ao mesmo tempo. O número **destinatário** (que recebe os alertas) é o seu WhatsApp pessoal normal, sem restrições.
+
+**Opção A: Número de teste da Meta (recomendado para começar)**
+
+A Meta fornece um número de teste gratuito para desenvolvimento. É a forma mais rápida de testar sem precisar de um chip extra.
 
 1. No menu lateral, vá em **WhatsApp > Configuração da API**
-2. Você verá um número de teste fornecido pela Meta para desenvolvimento
-3. Para usar seu próprio número:
-   - Clique em **Adicionar número de telefone**
-   - Use um número que **não esteja** cadastrado no WhatsApp pessoal (ou remova primeiro)
-   - Verifique o número via SMS ou chamada de voz
-4. Anote o **Phone Number ID** que aparece — é o `phone_number_id` do config
+2. O número de teste já estará disponível automaticamente
+3. Anote o **Phone Number ID** que aparece — é o `phone_number_id` do config
+4. Limitações do número de teste:
+   - Só envia para números registrados como destinatários de teste (máximo 5)
+   - As mensagens chegam de um número genérico da Meta
+   - Funciona perfeitamente para validar o sistema antes de investir em número próprio
+
+**Opção B: Número próprio (para produção)**
+
+Se quiser um número dedicado (ex: chip pré-pago ou VoIP):
+
+1. Clique em **Adicionar número de telefone**
+2. Use um número que **não esteja** cadastrado no WhatsApp pessoal (ou remova primeiro)
+3. Verifique o número via SMS ou chamada de voz
+4. Anote o **Phone Number ID** que aparece
 
 ### 4. Gerar Access Token
 
