@@ -347,10 +347,10 @@ Add one of the following lines (adjust the path to your installation):
 
 ```bash
 # Basic — logs to file
-*/5 * * * * cd /path/to/glucose-actions && .venv/bin/python -m src.main >> /var/log/librelinkup.log 2>&1
+*/5 * * * * cd /path/to/glucose-actions && .venv/bin/python -m src.main >> /var/log/glucose-actions.log 2>&1
 
 # With env vars for credentials (instead of config.yaml)
-*/5 * * * * cd /path/to/glucose-actions && LIBRELINKUP_EMAIL="your@email.com" LIBRELINKUP_PASSWORD="yourpass" WHATSAPP_ACCESS_TOKEN="your-token" .venv/bin/python -m src.main >> /var/log/librelinkup.log 2>&1
+*/5 * * * * cd /path/to/glucose-actions && LIBRELINKUP_EMAIL="your@email.com" LIBRELINKUP_PASSWORD="yourpass" WHATSAPP_ACCESS_TOKEN="your-token" .venv/bin/python -m src.main >> /var/log/glucose-actions.log 2>&1
 ```
 
 > **Note:** The file lock mechanism prevents overlapping runs. If a previous execution is still running when cron triggers the next one, it will exit gracefully.
