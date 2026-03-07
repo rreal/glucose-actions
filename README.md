@@ -96,6 +96,12 @@ outputs:
     device: "seu-device"
 ```
 
+Para testar a conexão com a Alexa:
+
+```bash
+python validate_webhook.py
+```
+
 ### Output: WhatsApp (Meta Cloud API)
 
 ```yaml
@@ -267,6 +273,7 @@ glucose-actions/
 ├── config.yaml               # Sua configuração (não commitado)
 ├── requirements.txt           # Dependências Python
 ├── validate_lib.py            # Validação da conexão LibreLinkUp (Phase 0)
+├── validate_webhook.py        # Validação da conexão webhook (Alexa/VoiceMonkey)
 ├── validate_whatsapp.py       # Validação da conexão WhatsApp Cloud API
 ├── src/
 │   ├── __init__.py
