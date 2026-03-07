@@ -230,33 +230,57 @@ python -m src.main
 
 ## Running
 
-### Manual
+### Step 1: Validate connections
+
+Before running the system, validate each connection individually:
+
+```bash
+source .venv/bin/activate
+
+# 1. Validate LibreLinkUp API connection
+python validate_lib.py
+# Expected: patient name, glucose value, trend, and SUCCESS
+
+# 2. Validate Alexa/VoiceMonkey webhook (if enabled)
+python validate_webhook.py
+# Expected: Alexa speaks the test message and script shows SUCCESS
+
+# 3. Validate WhatsApp Cloud API (if enabled)
+python validate_whatsapp.py
+# Expected: test message arrives on WhatsApp and script shows SUCCESS
+```
+
+### Step 2: Manual test run
+
+Run the full system once to verify everything works end-to-end:
 
 ```bash
 source .venv/bin/activate
 python -m src.main
 ```
 
-### Via Cron (recommended)
+This will read the current glucose value, evaluate thresholds, and send alerts if needed. Check the output for any errors.
+
+### Step 3: Set up cron (recommended)
+
+Once validated, schedule automatic execution every 5 minutes:
 
 ```bash
 # Edit crontab
 crontab -e
-
-# Add (runs every 5 minutes)
-*/5 * * * * cd /path/to/glucose-actions && .venv/bin/python -m src.main >> /var/log/librelinkup.log 2>&1
 ```
 
-## Initial Validation
-
-Before setting up cron, validate the LibreLinkUp connection:
+Add one of the following lines (adjust the path to your installation):
 
 ```bash
-source .venv/bin/activate
-python validate_lib.py
+# Basic — logs to file
+*/5 * * * * cd /home/rreal/freedom/claude_code/glucose-actions && .venv/bin/python -m src.main >> /var/log/librelinkup.log 2>&1
+
+# With env vars for credentials (instead of config.yaml)
+*/5 * * * * cd /home/rreal/freedom/claude_code/glucose-actions && LIBRELINKUP_EMAIL="your@email.com" LIBRELINKUP_PASSWORD="yourpass" WHATSAPP_ACCESS_TOKEN="your-token" .venv/bin/python -m src.main >> /var/log/librelinkup.log 2>&1
 ```
 
-Should display the patient name, current glucose value, trend, and `SUCCESS`.
+> **Note:** The file lock mechanism prevents overlapping runs. If a previous execution is still running when cron triggers the next one, it will exit gracefully.
 
 ## Tests
 
