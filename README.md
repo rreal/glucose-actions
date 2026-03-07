@@ -1,16 +1,25 @@
 # Glucose Actions — Glucose Monitor & Alert System
 
-Glucose monitoring system via [LibreLinkUp](https://librelinkup.com/) with automated alerts. Reads glucose data from a FreeStyle Libre sensor remotely and fires alerts when levels leave the safe range.
+[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Tests](https://img.shields.io/badge/tests-31%20passing-brightgreen.svg)](#tests)
+
+Glucose monitoring system via [LibreLinkUp](https://librelinkup.com/) with automated alerts. Reads glucose data from a FreeStyle Libre CGM sensor remotely and fires alerts when levels leave the safe range.
+
+Built for diabetics and their caregivers who want reliable, automated glucose alerts beyond the mobile app.
+
+> **Note:** The WhatsApp Cloud API output has been implemented but **not yet tested with a real Meta Business account**. If you set it up and test it, please [open an issue](https://github.com/rreal/glucose-actions/issues) or PR to share your experience — your feedback will help other users!
 
 ## Features
 
-- **Automatic glucose reading** via pylibrelinkup (LibreLinkUp API)
+- **Automatic glucose reading** via [pylibrelinkup](https://pypi.org/project/pylibrelinkup/) (LibreLinkUp API)
 - **Configurable alert thresholds** for hypo/hyper (default: < 70 and > 180 mg/dL)
 - **Smart cooldown** between repeated alerts (default: 20 min), with reset on return to normal
 - **Stale reading detection** (ignores readings older than 15 min)
+- **Customizable alert messages** — change language and format via config file
 - **Pluggable outputs:**
   - Webhook (Alexa via VoiceMonkey)
-  - WhatsApp (Meta Cloud API)
+  - WhatsApp (Meta Cloud API) *(untested — contributions welcome!)*
 - **State persistence** between executions (atomic JSON writes)
 - **File lock** to prevent overlapping cron executions
 - **Trend data** — trend arrow included in alerts (↓ ↘ → ↗ ↑)
@@ -32,15 +41,16 @@ cron (every 5 min)
 ## Requirements
 
 - Python 3.12+
-- LibreLinkUp account with at least one shared patient
-- (Optional) Meta Business account for WhatsApp alerts
-- (Optional) VoiceMonkey for Alexa alerts
+- Linux (uses `fcntl` for file locking)
+- LibreLinkUp account with at least one shared patient connection
+- (Optional) [VoiceMonkey](https://voicemonkey.io/) account for Alexa alerts
+- (Optional) [Meta Business](https://business.facebook.com/) account for WhatsApp alerts
 
 ## Installation
 
 ```bash
 # Clone the repository
-git clone git@github.com:rreal/glucose-actions.git
+git clone https://github.com/rreal/glucose-actions.git
 cd glucose-actions
 
 # Create and activate virtual environment
@@ -85,6 +95,28 @@ alerts:
   max_reading_age_minutes: 15  # ignore readings older than this
 ```
 
+### Alert Messages (customizable)
+
+Alert messages are fully configurable via `config.yaml`. Available placeholders: `{value}` (glucose mg/dL), `{trend}` (trend arrow), `{level}` (low/high).
+
+```yaml
+alerts:
+  messages:
+    # Portuguese (default)
+    low: "Atencao: glicose em {value} mg/dL {trend}, nivel baixo"
+    high: "Atencao: glicose em {value} mg/dL {trend}, nivel alto"
+
+    # English example
+    # low: "Warning: glucose at {value} mg/dL {trend}, level low"
+    # high: "Warning: glucose at {value} mg/dL {trend}, level high"
+
+    # Spanish example
+    # low: "Atencion: glucosa en {value} mg/dL {trend}, nivel bajo"
+    # high: "Atencion: glucosa en {value} mg/dL {trend}, nivel alto"
+```
+
+If no messages are configured, defaults to Portuguese.
+
 ### Output: Webhook (Alexa/VoiceMonkey)
 
 ```yaml
@@ -104,6 +136,8 @@ python validate_webhook.py
 
 ### Output: WhatsApp (Meta Cloud API)
 
+> **Status:** Implemented but not yet tested with a real account. See [Contributing](CONTRIBUTING.md) if you test it.
+
 ```yaml
 outputs:
   - type: whatsapp
@@ -115,7 +149,46 @@ outputs:
     language_code: "pt_BR"
 ```
 
+## VoiceMonkey Setup (Alexa alerts)
+
+[VoiceMonkey](https://voicemonkey.io/) lets you trigger Alexa announcements via HTTP webhooks. Here's how to set it up:
+
+### 1. Create a VoiceMonkey account
+
+1. Go to [voicemonkey.io](https://voicemonkey.io/) and sign up
+2. Link your Amazon account when prompted
+
+### 2. Enable the VoiceMonkey Alexa skill
+
+1. Open the Alexa app on your phone
+2. Go to **Skills & Games** and search for **Voice Monkey**
+3. Enable the skill and link your VoiceMonkey account
+
+### 3. Create a device (monkey)
+
+1. In the [VoiceMonkey dashboard](https://app.voicemonkey.io/), go to **Manage Monkeys**
+2. Click **Add a Monkey** and give it a name (e.g. "glucose-alert")
+3. Select the Alexa device that should speak the alerts
+4. Note the **monkey name** — this is the `device` in your config
+
+### 4. Get your API token
+
+1. In the VoiceMonkey dashboard, go to **API** or **Settings**
+2. Copy your **API Token** — this is the `token` in your config
+
+### 5. Configure and test
+
+1. Fill in `url`, `token`, and `device` in your `config.yaml`
+2. Set `enabled: true`
+3. Run the validation:
+   ```bash
+   python validate_webhook.py
+   ```
+4. Your Alexa device should speak the test message
+
 ## WhatsApp Cloud API Setup (step by step)
+
+> **Note:** This output has been implemented but **not yet tested with a real Meta Business account**. The steps below are based on Meta's documentation. If you complete the setup, please [share your experience](https://github.com/rreal/glucose-actions/issues) to help others!
 
 ### 1. Create a Meta Business Manager account
 
@@ -274,10 +347,10 @@ Add one of the following lines (adjust the path to your installation):
 
 ```bash
 # Basic — logs to file
-*/5 * * * * cd /home/rreal/freedom/claude_code/glucose-actions && .venv/bin/python -m src.main >> /var/log/librelinkup.log 2>&1
+*/5 * * * * cd /path/to/glucose-actions && .venv/bin/python -m src.main >> /var/log/librelinkup.log 2>&1
 
 # With env vars for credentials (instead of config.yaml)
-*/5 * * * * cd /home/rreal/freedom/claude_code/glucose-actions && LIBRELINKUP_EMAIL="your@email.com" LIBRELINKUP_PASSWORD="yourpass" WHATSAPP_ACCESS_TOKEN="your-token" .venv/bin/python -m src.main >> /var/log/librelinkup.log 2>&1
+*/5 * * * * cd /path/to/glucose-actions && LIBRELINKUP_EMAIL="your@email.com" LIBRELINKUP_PASSWORD="yourpass" WHATSAPP_ACCESS_TOKEN="your-token" .venv/bin/python -m src.main >> /var/log/librelinkup.log 2>&1
 ```
 
 > **Note:** The file lock mechanism prevents overlapping runs. If a previous execution is still running when cron triggers the next one, it will exit gracefully.
@@ -316,6 +389,8 @@ glucose-actions/
 │   ├── test_state.py          # State persistence tests
 │   └── test_whatsapp_output.py # WhatsApp output tests
 ├── state.json                 # State between executions (not committed)
+├── LICENSE                    # MIT License
+├── CONTRIBUTING.md            # Contribution guidelines
 └── .gitignore
 ```
 
@@ -333,7 +408,7 @@ class MyOutput(BaseOutput):
         ...
 ```
 
-Add the type in `build_outputs()` in `src/main.py` and the configuration in `config.yaml`.
+Add the type in `build_outputs()` in `src/main.py` and the configuration in `config.yaml`. See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ## Security
 
@@ -342,6 +417,15 @@ Add the type in `build_outputs()` in `src/main.py` and the configuration in `con
 - `chmod 600 config.yaml` to restrict access
 - WhatsApp tokens are never logged (redacted in debug output)
 
+## Contributing
+
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+Especially interested in:
+- Testing the WhatsApp Cloud API output with a real Meta Business account
+- New output plugins (Telegram, SMS, push notifications, etc.)
+- Trend-based predictive alerts
+
 ## License
 
-Personal use.
+[MIT](LICENSE)

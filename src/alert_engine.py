@@ -41,7 +41,18 @@ def should_alert(level: str, state: dict, cooldown_minutes: int) -> bool:
     return elapsed > cooldown_minutes * 60
 
 
-def build_message(glucose_value: int, level: str, trend_arrow: str) -> str:
-    """Build human-readable alert message in Portuguese."""
-    level_text = "baixo" if level == "low" else "alto"
-    return f"Atencao: glicose em {glucose_value} mg/dL {trend_arrow}, nivel {level_text}"
+def build_message(glucose_value: int, level: str, trend_arrow: str, config: dict | None = None) -> str:
+    """Build alert message using configurable templates from config."""
+    messages = {}
+    if config:
+        messages = config.get("alerts", {}).get("messages", {})
+
+    template = messages.get(level, "")
+    if not template:
+        defaults = {
+            "low": "Atencao: glicose em {value} mg/dL {trend}, nivel baixo",
+            "high": "Atencao: glicose em {value} mg/dL {trend}, nivel alto",
+        }
+        template = defaults.get(level, "Alert: glucose {value} mg/dL {trend}, level {level}")
+
+    return template.format(value=glucose_value, trend=trend_arrow, level=level)

@@ -71,11 +71,11 @@ class TestShouldAlert:
 
 
 class TestBuildMessage:
-    def test_low_message(self):
+    def test_low_default_message(self):
         msg = build_message(65, "low", "↘")
         assert msg == "Atencao: glicose em 65 mg/dL ↘, nivel baixo"
 
-    def test_high_message(self):
+    def test_high_default_message(self):
         msg = build_message(210, "high", "↑")
         assert msg == "Atencao: glicose em 210 mg/dL ↑, nivel alto"
 
@@ -83,3 +83,19 @@ class TestBuildMessage:
         msg = build_message(100, "low", "→")
         assert "100" in msg
         assert "100.0" not in msg
+
+    def test_custom_message_from_config(self):
+        config = {"alerts": {"messages": {
+            "low": "Warning: glucose at {value} mg/dL {trend}, level {level}",
+        }}}
+        msg = build_message(65, "low", "↘", config)
+        assert msg == "Warning: glucose at 65 mg/dL ↘, level low"
+
+    def test_missing_config_uses_default(self):
+        msg = build_message(65, "low", "↘", None)
+        assert msg == "Atencao: glicose em 65 mg/dL ↘, nivel baixo"
+
+    def test_partial_config_uses_default_for_missing(self):
+        config = {"alerts": {"messages": {"low": "Custom low {value}"}}}
+        msg = build_message(210, "high", "↑", config)
+        assert msg == "Atencao: glicose em 210 mg/dL ↑, nivel alto"

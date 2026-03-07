@@ -179,7 +179,7 @@ def main() -> None:
             sys.exit(0)
 
         # Build message and send
-        message = build_message(glucose_value, level, trend_arrow)
+        message = build_message(glucose_value, level, trend_arrow, config)
         outputs = build_outputs(config)
 
         if not outputs:

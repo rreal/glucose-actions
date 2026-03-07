@@ -14,6 +14,15 @@ alerts:
   cooldown_minutes: 20     # minutes between repeated alerts for same level
   max_reading_age_minutes: 15  # ignore readings older than this
 
+  # Alert message templates (optional — defaults to Portuguese)
+  # Available placeholders: {value} = glucose mg/dL, {trend} = trend arrow, {level} = low/high
+  messages:
+    low: "Atencao: glicose em {value} mg/dL {trend}, nivel baixo"
+    high: "Atencao: glicose em {value} mg/dL {trend}, nivel alto"
+    # English example:
+    # low: "Warning: glucose at {value} mg/dL {trend}, level low"
+    # high: "Warning: glucose at {value} mg/dL {trend}, level high"
+
 outputs:
   - type: webhook
     enabled: false
