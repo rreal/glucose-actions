@@ -1,88 +1,88 @@
 # Glucose Actions — Glucose Monitor & Alert System
 
-Sistema de monitoramento de glicose via [LibreLinkUp](https://librelinkup.com/) com alertas automatizados. Lê dados do sensor de glicose (FreeStyle Libre) remotamente e dispara alertas quando os níveis saem do range seguro.
+Glucose monitoring system via [LibreLinkUp](https://librelinkup.com/) with automated alerts. Reads glucose data from a FreeStyle Libre sensor remotely and fires alerts when levels leave the safe range.
 
-## Funcionalidades
+## Features
 
-- **Leitura automática** de glicose via pylibrelinkup (API do LibreLinkUp)
-- **Alertas configuráveis** com thresholds de hipo/hiper (padrão: < 70 e > 180 mg/dL)
-- **Cooldown inteligente** entre alertas repetidos (padrão: 20 min), com reset ao normalizar
-- **Detecção de leitura obsoleta** (ignora readings mais velhos que 15 min)
-- **Outputs plugáveis:**
+- **Automatic glucose reading** via pylibrelinkup (LibreLinkUp API)
+- **Configurable alert thresholds** for hypo/hyper (default: < 70 and > 180 mg/dL)
+- **Smart cooldown** between repeated alerts (default: 20 min), with reset on return to normal
+- **Stale reading detection** (ignores readings older than 15 min)
+- **Pluggable outputs:**
   - Webhook (Alexa via VoiceMonkey)
   - WhatsApp (Meta Cloud API)
-- **Persistência de estado** entre execuções (JSON com escrita atômica)
-- **File lock** para prevenir execuções sobrepostas do cron
-- **Trend data** — seta de tendência incluída nos alertas (↓ ↘ → ↗ ↑)
+- **State persistence** between executions (atomic JSON writes)
+- **File lock** to prevent overlapping cron executions
+- **Trend data** — trend arrow included in alerts (↓ ↘ → ↗ ↑)
 
-## Arquitetura
+## Architecture
 
 ```
-cron (cada 5 min)
-  └── src/main.py (orquestrador)
+cron (every 5 min)
+  └── src/main.py (orchestrator)
         ├── src/glucose_reader.py    → pylibrelinkup → LibreLinkUp API
-        ├── src/alert_engine.py      → avaliação de thresholds + cooldown
-        ├── src/state.py             → persistência JSON
+        ├── src/alert_engine.py      → threshold evaluation + cooldown
+        ├── src/state.py             → JSON state persistence
         └── src/outputs/
               ├── base.py            → BaseOutput (ABC)
               ├── webhook.py         → Alexa/VoiceMonkey
               └── whatsapp.py        → WhatsApp Cloud API
 ```
 
-## Requisitos
+## Requirements
 
 - Python 3.12+
-- Conta LibreLinkUp com pelo menos um paciente compartilhado
-- (Opcional) Conta Meta Business para WhatsApp alerts
-- (Opcional) VoiceMonkey para Alexa alerts
+- LibreLinkUp account with at least one shared patient
+- (Optional) Meta Business account for WhatsApp alerts
+- (Optional) VoiceMonkey for Alexa alerts
 
-## Instalação
+## Installation
 
 ```bash
-# Clonar o repositório
-git clone git@github.com:SEU_USUARIO/glucose-actions.git
+# Clone the repository
+git clone git@github.com:rreal/glucose-actions.git
 cd glucose-actions
 
-# Criar e ativar virtual environment
+# Create and activate virtual environment
 python3 -m venv .venv
 source .venv/bin/activate
 
-# Instalar dependências
+# Install dependencies
 pip install -r requirements.txt
 
-# Criar config com suas credenciais
+# Create config with your credentials
 cp config.example.yaml config.yaml
 chmod 600 config.yaml
-# Editar config.yaml com seus dados
+# Edit config.yaml with your values
 ```
 
-## Configuração
+## Configuration
 
-### Credenciais LibreLinkUp
+### LibreLinkUp Credentials
 
-No `config.yaml`:
+In `config.yaml`:
 
 ```yaml
 librelinkup:
-  email: "seu-email@example.com"
-  password: "sua-senha"
+  email: "your-email@example.com"
+  password: "your-password"
 ```
 
-Ou via variáveis de ambiente (recomendado):
+Or via environment variables (recommended):
 
 ```bash
-export LIBRELINKUP_EMAIL="seu-email@example.com"
-export LIBRELINKUP_PASSWORD="sua-senha"
+export LIBRELINKUP_EMAIL="your-email@example.com"
+export LIBRELINKUP_PASSWORD="your-password"
 ```
 
-### Thresholds de Alerta
+### Alert Thresholds
 
 ```yaml
 alerts:
-  low_threshold: 70         # mg/dL — abaixo disso: alerta hipo
-  high_threshold: 180        # mg/dL — acima disso: alerta hiper
-  cooldown_minutes: 20       # minutos entre alertas repetidos do mesmo nível
-  max_reading_age_minutes: 15  # ignora leituras mais velhas que isso
+  low_threshold: 70         # mg/dL — below this triggers hypo alert
+  high_threshold: 180        # mg/dL — above this triggers hyper alert
+  cooldown_minutes: 20       # minutes between repeated alerts for same level
+  max_reading_age_minutes: 15  # ignore readings older than this
 ```
 
 ### Output: Webhook (Alexa/VoiceMonkey)
@@ -92,11 +92,11 @@ outputs:
   - type: webhook
     enabled: true
     url: "https://api-v2.voicemonkey.io/announcement"
-    token: "seu-token-voicemonkey"
-    device: "seu-device"
+    token: "your-voicemonkey-token"
+    device: "your-device"
 ```
 
-Para testar a conexão com a Alexa:
+To test the Alexa connection:
 
 ```bash
 python validate_webhook.py
@@ -108,127 +108,127 @@ python validate_webhook.py
 outputs:
   - type: whatsapp
     enabled: true
-    phone_number_id: "SEU_PHONE_NUMBER_ID"
-    access_token: ""  # ou use env var WHATSAPP_ACCESS_TOKEN
+    phone_number_id: "YOUR_PHONE_NUMBER_ID"
+    access_token: ""  # or set WHATSAPP_ACCESS_TOKEN env var
     recipient: "5511999999999"
     template_name: "glucose_alert"
     language_code: "pt_BR"
 ```
 
-## Configuração do WhatsApp Cloud API (passo a passo)
+## WhatsApp Cloud API Setup (step by step)
 
-### 1. Criar conta no Meta Business Manager
+### 1. Create a Meta Business Manager account
 
-1. Acesse [business.facebook.com](https://business.facebook.com/) e crie uma conta business (ou use existente)
-2. Acesse [developers.facebook.com](https://developers.facebook.com/) e faça login com a mesma conta
+1. Go to [business.facebook.com](https://business.facebook.com/) and create a business account (or use an existing one)
+2. Go to [developers.facebook.com](https://developers.facebook.com/) and log in with the same account
 
-### 2. Criar App no Meta for Developers
+### 2. Create an App in Meta for Developers
 
-1. Em [developers.facebook.com/apps](https://developers.facebook.com/apps), clique **Criar App**
-2. Selecione **Outro** como tipo de app
-3. Selecione **Business** como tipo
-4. Dê um nome (ex: "Glucose Monitor") e vincule à sua conta business
-5. No painel do app, clique **Adicionar produto** e selecione **WhatsApp**
+1. At [developers.facebook.com/apps](https://developers.facebook.com/apps), click **Create App**
+2. Select **Other** as app type
+3. Select **Business** as type
+4. Name it (e.g. "Glucose Monitor") and link it to your business account
+5. In the app dashboard, click **Add Product** and select **WhatsApp**
 
-### 3. Configurar número de telefone (remetente)
+### 3. Configure phone number (sender)
 
-> **Importante:** O número **remetente** (que envia os alertas) não pode estar ativo no WhatsApp pessoal ou WhatsApp Business app ao mesmo tempo. O número **destinatário** (que recebe os alertas) é o seu WhatsApp pessoal normal, sem restrições.
+> **Important:** The **sender** number (the one sending alerts) cannot be active on WhatsApp personal or WhatsApp Business app at the same time. The **recipient** number (the one receiving alerts) is your normal personal WhatsApp — no restrictions.
 
-**Opção A: Número de teste da Meta (recomendado para começar)**
+**Option A: Meta's test number (recommended to get started)**
 
-A Meta fornece um número de teste gratuito para desenvolvimento. É a forma mais rápida de testar sem precisar de um chip extra.
+Meta provides a free test number for development. This is the fastest way to test without needing an extra SIM card.
 
-1. No menu lateral, vá em **WhatsApp > Configuração da API**
-2. O número de teste já estará disponível automaticamente
-3. Anote o **Phone Number ID** que aparece — é o `phone_number_id` do config
-4. Limitações do número de teste:
-   - Só envia para números registrados como destinatários de teste (máximo 5)
-   - As mensagens chegam de um número genérico da Meta
-   - Funciona perfeitamente para validar o sistema antes de investir em número próprio
+1. In the sidebar, go to **WhatsApp > API Setup**
+2. The test number will already be available automatically
+3. Note the **Phone Number ID** shown — this is the `phone_number_id` for your config
+4. Test number limitations:
+   - Can only send to registered test recipient numbers (maximum 5)
+   - Messages arrive from a generic Meta number
+   - Works perfectly to validate the system before investing in a dedicated number
 
-**Opção B: Número próprio (para produção)**
+**Option B: Your own number (for production)**
 
-Se quiser um número dedicado (ex: chip pré-pago ou VoIP):
+If you want a dedicated number (e.g. prepaid SIM or VoIP):
 
-1. Clique em **Adicionar número de telefone**
-2. Use um número que **não esteja** cadastrado no WhatsApp pessoal (ou remova primeiro)
-3. Verifique o número via SMS ou chamada de voz
-4. Anote o **Phone Number ID** que aparece
+1. Click **Add phone number**
+2. Use a number that is **not** registered on WhatsApp personal (or remove it first)
+3. Verify the number via SMS or voice call
+4. Note the **Phone Number ID** shown
 
-### 4. Gerar Access Token
+### 4. Generate Access Token
 
-**Token temporário (para testes):**
-1. Na página **Configuração da API**, copie o token temporário gerado
-2. Este token expira em 24h
+**Temporary token (for testing):**
+1. On the **API Setup** page, copy the generated temporary token
+2. This token expires in 24h
 
-**Token permanente (para produção):**
-1. Vá em **Configurações do App > Básico** e anote o App ID
-2. No Meta Business Manager, vá em **Configurações > Usuários do sistema**
-3. Crie um novo usuário do sistema como **Admin**
-4. Clique em **Gerar token** para esse usuário
-5. Selecione o app criado e as permissões: `whatsapp_business_messaging`, `whatsapp_business_management`
-6. O token gerado **não expira** — guarde com segurança
-7. Configure como variável de ambiente:
+**Permanent token (for production):**
+1. Go to **App Settings > Basic** and note the App ID
+2. In Meta Business Manager, go to **Settings > System Users**
+3. Create a new system user as **Admin**
+4. Click **Generate Token** for this user
+5. Select the app and permissions: `whatsapp_business_messaging`, `whatsapp_business_management`
+6. The generated token **does not expire** — store it securely
+7. Set as environment variable:
    ```bash
-   export WHATSAPP_ACCESS_TOKEN="seu-token-permanente"
+   export WHATSAPP_ACCESS_TOKEN="your-permanent-token"
    ```
 
-### 5. Criar Message Template
+### 5. Create Message Template
 
-Os alertas são enviados como template messages (exigência da Meta para mensagens proativas).
+Alerts are sent as template messages (Meta's requirement for proactive messages).
 
-1. No Meta Business Manager, vá em **WhatsApp > Gerenciador de Contas > Message Templates**
-2. Clique **Criar template**
+1. In Meta Business Manager, go to **WhatsApp > Account Manager > Message Templates**
+2. Click **Create Template**
 3. Configure:
-   - **Categoria:** Utility
-   - **Nome:** `glucose_alert`
-   - **Idioma:** Português (BR)
-   - **Corpo da mensagem:** `{{1}}`
-     - Isso permite que o sistema envie a mensagem completa como parâmetro
-     - Exemplo de preview: "Atencao: glicose em 65 mg/dL ↘, nivel baixo"
-4. Envie para aprovação — normalmente leva de minutos a 48h
-5. Aguarde o status mudar para **Aprovado**
+   - **Category:** Utility
+   - **Name:** `glucose_alert`
+   - **Language:** Portuguese (BR) — or your preferred language
+   - **Body:** `{{1}}`
+     - This allows the system to send the full alert message as a parameter
+     - Preview example: "Atencao: glicose em 65 mg/dL ↘, nivel baixo"
+4. Submit for approval — typically takes minutes to 48h
+5. Wait for the status to change to **Approved**
 
-### 6. Registrar destinatários (modo desenvolvimento)
+### 6. Register recipients (development mode)
 
-Enquanto o app estiver em modo desenvolvimento:
-1. Na página **Configuração da API**, seção **Para**, adicione os números que vão receber mensagens
-2. Cada número precisa confirmar recebendo um código de verificação
-3. Para enviar para qualquer número, o app precisa estar em **modo produção** (requer verificação do business)
+While the app is in development mode:
+1. On the **API Setup** page, in the **To** section, add the numbers that will receive messages
+2. Each number must confirm by receiving a verification code
+3. To send to any number, the app needs to be in **production mode** (requires business verification)
 
-### 7. Ativar cobrança
+### 7. Enable billing
 
-1. No Meta Business Manager, vá em **Configurações > Pagamento do WhatsApp**
-2. Adicione um método de pagamento
-3. Custo: por mensagem template entregue (varia por país, ~R$0,05-0,15 por mensagem no Brasil)
-4. Para alertas de glicose a cada 5 min com cooldown de 20 min, o custo mensal será muito baixo
+1. In Meta Business Manager, go to **Settings > WhatsApp Payment**
+2. Add a payment method
+3. Cost: per delivered template message (varies by country, ~$0.01-0.03 per message)
+4. For glucose alerts every 5 min with 20 min cooldown, the monthly cost will be very low
 
-### 8. Testar conexão
+### 8. Test connection
 
-Rode o script de validação para enviar uma mensagem de teste para o seu próprio número:
+Run the validation script to send a test message to your own number:
 
 ```bash
 source .venv/bin/activate
 python validate_whatsapp.py
 ```
 
-O script vai:
-1. Carregar a configuração do `config.yaml`
-2. Validar que todos os campos estão preenchidos
-3. Enviar uma mensagem de teste via template para o `recipient` configurado
-4. Mostrar `SUCCESS` se a mensagem foi enviada, ou `FAILURE` com dicas de debug
+The script will:
+1. Load the configuration from `config.yaml`
+2. Validate that all fields are filled in
+3. Send a test message via template to the configured `recipient`
+4. Show `SUCCESS` if the message was sent, or `FAILURE` with debug tips
 
-> **Dica:** Coloque seu próprio número como `recipient` para receber a mensagem de teste.
+> **Tip:** Set your own number as `recipient` to receive the test message yourself.
 
-### 9. Validar sistema completo
+### 9. Validate full system
 
-Após o teste do WhatsApp, valide o fluxo completo:
+After the WhatsApp test, validate the complete flow:
 
 ```bash
 python -m src.main
 ```
 
-## Execução
+## Running
 
 ### Manual
 
@@ -237,87 +237,87 @@ source .venv/bin/activate
 python -m src.main
 ```
 
-### Via Cron (recomendado)
+### Via Cron (recommended)
 
 ```bash
-# Editar crontab
+# Edit crontab
 crontab -e
 
-# Adicionar (executa a cada 5 minutos)
-*/5 * * * * cd /caminho/para/glucose-actions && .venv/bin/python -m src.main >> /var/log/librelinkup.log 2>&1
+# Add (runs every 5 minutes)
+*/5 * * * * cd /path/to/glucose-actions && .venv/bin/python -m src.main >> /var/log/librelinkup.log 2>&1
 ```
 
-## Validação Inicial
+## Initial Validation
 
-Antes de configurar o cron, valide a conexão com o LibreLinkUp:
+Before setting up cron, validate the LibreLinkUp connection:
 
 ```bash
 source .venv/bin/activate
 python validate_lib.py
 ```
 
-Deve mostrar o nome do paciente, valor de glicose atual, tendência e `SUCCESS`.
+Should display the patient name, current glucose value, trend, and `SUCCESS`.
 
-## Testes
+## Tests
 
 ```bash
 source .venv/bin/activate
 pytest tests/ -v
 ```
 
-## Estrutura do Projeto
+## Project Structure
 
 ```
 glucose-actions/
-├── config.example.yaml       # Template de configuração
-├── config.yaml               # Sua configuração (não commitado)
-├── requirements.txt           # Dependências Python
-├── validate_lib.py            # Validação da conexão LibreLinkUp (Phase 0)
-├── validate_webhook.py        # Validação da conexão webhook (Alexa/VoiceMonkey)
-├── validate_whatsapp.py       # Validação da conexão WhatsApp Cloud API
+├── config.example.yaml       # Configuration template
+├── config.yaml               # Your configuration (not committed)
+├── requirements.txt           # Python dependencies
+├── validate_lib.py            # LibreLinkUp connection validation
+├── validate_webhook.py        # Webhook (Alexa/VoiceMonkey) connection validation
+├── validate_whatsapp.py       # WhatsApp Cloud API connection validation
 ├── src/
 │   ├── __init__.py
-│   ├── main.py                # Entry point — orquestra read → evaluate → alert
-│   ├── glucose_reader.py      # Leitura de glicose via pylibrelinkup
-│   ├── alert_engine.py        # Avaliação de thresholds + cooldown + mensagens
-│   ├── state.py               # Persistência de estado (JSON atômico)
+│   ├── main.py                # Entry point — orchestrates read → evaluate → alert
+│   ├── glucose_reader.py      # Glucose reading via pylibrelinkup
+│   ├── alert_engine.py        # Threshold evaluation + cooldown + messages
+│   ├── state.py               # State persistence (atomic JSON)
 │   └── outputs/
 │       ├── __init__.py
 │       ├── base.py            # BaseOutput (ABC)
-│       ├── webhook.py         # Output via webhook HTTP POST
-│       └── whatsapp.py        # Output via WhatsApp Cloud API
+│       ├── webhook.py         # Webhook HTTP POST output
+│       └── whatsapp.py        # WhatsApp Cloud API output
 ├── tests/
 │   ├── __init__.py
-│   ├── test_alert_engine.py   # Testes do motor de alertas
-│   ├── test_state.py          # Testes da persistência de estado
-│   └── test_whatsapp_output.py # Testes do output WhatsApp
-├── state.json                 # Estado entre execuções (não commitado)
+│   ├── test_alert_engine.py   # Alert engine tests
+│   ├── test_state.py          # State persistence tests
+│   └── test_whatsapp_output.py # WhatsApp output tests
+├── state.json                 # State between executions (not committed)
 └── .gitignore
 ```
 
-## Adicionando Novos Outputs
+## Adding New Outputs
 
-Crie uma nova classe estendendo `BaseOutput`:
+Create a new class extending `BaseOutput`:
 
 ```python
 from src.outputs.base import BaseOutput
 
-class MeuOutput(BaseOutput):
+class MyOutput(BaseOutput):
     def send_alert(self, message: str, glucose_value: int, level: str) -> bool:
-        # Implementar envio
-        # Retornar True se sucesso, False se falha
+        # Implement sending logic
+        # Return True on success, False on failure
         ...
 ```
 
-Adicione o tipo no `build_outputs()` em `src/main.py` e a configuração no `config.yaml`.
+Add the type in `build_outputs()` in `src/main.py` and the configuration in `config.yaml`.
 
-## Segurança
+## Security
 
-- `config.yaml` contém credenciais — **nunca commitar** (protegido pelo `.gitignore`)
-- Use variáveis de ambiente para segredos em produção
-- `chmod 600 config.yaml` para restringir acesso
-- Tokens do WhatsApp nunca são logados (redacted no debug output)
+- `config.yaml` contains credentials — **never commit** (protected by `.gitignore`)
+- Use environment variables for secrets in production
+- `chmod 600 config.yaml` to restrict access
+- WhatsApp tokens are never logged (redacted in debug output)
 
-## Licença
+## License
 
-Uso pessoal.
+Personal use.

@@ -64,23 +64,23 @@ def main() -> None:
 
     # Send test message
     print("\n[3/3] Sending test message...")
-    test_message = "Teste de conexao: sistema de monitoramento de glicose funcionando corretamente."
+    test_message = "Connection test: glucose monitoring system is working correctly."
     success = output.send_alert(test_message, glucose_value=100, level="normal")
 
     if success:
         print("\n" + "=" * 50)
         print(">>> SUCCESS <<<")
         print("=" * 50)
-        print("\nMensagem de teste enviada para o dispositivo.")
-        print("Verifique se a Alexa falou a mensagem!")
+        print("\nTest message sent to device.")
+        print("Check if Alexa spoke the message!")
     else:
         print("\n" + "=" * 50)
         print(">>> FAILURE <<<")
         print("=" * 50)
-        print("\nA mensagem nao foi enviada. Verifique:")
-        print("  - A URL esta correta?")
-        print("  - O token esta valido?")
-        print("  - O device name esta correto no VoiceMonkey?")
+        print("\nMessage was not sent. Check:")
+        print("  - Is the URL correct?")
+        print("  - Is the token valid?")
+        print("  - Is the device name correct in VoiceMonkey?")
         sys.exit(1)
 
 

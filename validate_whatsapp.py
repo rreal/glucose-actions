@@ -81,25 +81,25 @@ def main() -> None:
 
     # Send test message
     print("\n[3/3] Sending test message...")
-    test_message = "Teste de conexao: sistema de monitoramento de glicose funcionando corretamente."
+    test_message = "Connection test: glucose monitoring system is working correctly."
     success = output.send_alert(test_message, glucose_value=100, level="normal")
 
     if success:
         print("\n" + "=" * 50)
         print(">>> SUCCESS <<<")
         print("=" * 50)
-        print(f"\nMensagem de teste enviada para {recipient}.")
-        print("Verifique seu WhatsApp!")
+        print(f"\nTest message sent to {recipient}.")
+        print("Check your WhatsApp!")
     else:
         print("\n" + "=" * 50)
         print(">>> FAILURE <<<")
         print("=" * 50)
-        print("\nA mensagem nao foi enviada. Verifique:")
-        print("  - O access_token esta valido e nao expirou?")
-        print("  - O phone_number_id esta correto?")
-        print("  - O template '{}' foi aprovado no Meta Business Manager?".format(template_name))
-        print("  - O numero destinatario esta registrado (modo desenvolvimento)?")
-        print("\nDica: execute com DEBUG para mais detalhes:")
+        print("\nMessage was not sent. Check:")
+        print("  - Is the access_token valid and not expired?")
+        print("  - Is the phone_number_id correct?")
+        print("  - Is the template '{}' approved in Meta Business Manager?".format(template_name))
+        print("  - Is the recipient number registered (development mode)?")
+        print("\nTip: run with DEBUG for more details:")
         print("  PYTHONPATH=. python -c \"import logging; logging.basicConfig(level='DEBUG')\" && python validate_whatsapp.py")
         sys.exit(1)
 
