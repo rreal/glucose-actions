@@ -86,6 +86,7 @@ def build_outputs(config: dict) -> list:
                 url=out_cfg["url"],
                 token=out_cfg.get("token", ""),
                 device=out_cfg.get("device", ""),
+                language=out_cfg.get("language", ""),
             ))
         elif out_type == "whatsapp":
             access_token = os.environ.get("WHATSAPP_ACCESS_TOKEN") or out_cfg.get("access_token", "")

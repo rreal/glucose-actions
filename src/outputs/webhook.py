@@ -10,10 +10,11 @@ logger = logging.getLogger(__name__)
 
 
 class WebhookOutput(BaseOutput):
-    def __init__(self, url: str, token: str, device: str) -> None:
+    def __init__(self, url: str, token: str, device: str, language: str = "") -> None:
         self.url = url
         self.token = token
         self.device = device
+        self.language = language
 
     def send_alert(self, message: str, glucose_value: int, level: str) -> bool:
         """Send alert via HTTP POST webhook. Returns True on 2xx."""
@@ -22,6 +23,8 @@ class WebhookOutput(BaseOutput):
             "device": self.device,
             "text": message,
         }
+        if self.language:
+            payload["language"] = self.language
         logger.debug("Webhook POST to %s with device: %s", self.url, self.device)
         try:
             resp = requests.post(self.url, json=payload, timeout=10)

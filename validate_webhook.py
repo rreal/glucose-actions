@@ -1,19 +1,19 @@
 """Validate webhook (Alexa/VoiceMonkey) connectivity.
 
-Sends test messages using the configured alert phrases to verify
-that the webhook URL, token, device, and messages are working.
+Sends test messages to verify that the webhook is working.
 
 Usage:
-    python validate_webhook.py
+    python validate_webhook.py                       # sends configured alert phrases
+    python validate_webhook.py "minha mensagem"      # sends a custom message
 """
 
 import sys
 import time
 
+import requests
 import yaml
 
 from src.alert_engine import build_message
-from src.outputs.webhook import WebhookOutput
 
 
 def load_config() -> dict | None:
@@ -34,6 +34,18 @@ def get_webhook_config(config: dict) -> dict | None:
     return None
 
 
+def send_message(url: str, payload: dict) -> bool:
+    safe_payload = {**payload, "token": payload["token"][:8] + "***"}
+    print(f"    Payload: {safe_payload}")
+    try:
+        resp = requests.post(url, json=payload, timeout=10)
+        print(f"    Response: {resp.status_code} {resp.text[:300]}")
+        return resp.ok
+    except requests.RequestException as e:
+        print(f"    ERROR: {e}")
+        return False
+
+
 TEST_SCENARIOS = [
     {"level": "low", "glucose_value": 55, "trend": "↓"},
     {"level": "high", "glucose_value": 210, "trend": "↑"},
@@ -41,79 +53,72 @@ TEST_SCENARIOS = [
 
 
 def main() -> None:
+    custom_message = " ".join(sys.argv[1:]) if len(sys.argv) > 1 else ""
+
     print("=" * 50)
     print("Webhook (Alexa/VoiceMonkey) Validation")
     print("=" * 50)
 
-    # Load config
-    print("\n[1/3] Loading config...")
+    print("\n[1] Loading config...")
     config = load_config()
     if config is None:
-        print("\n>>> FAILURE <<<")
         sys.exit(1)
 
     wh_cfg = get_webhook_config(config)
     if wh_cfg is None:
-        print("\n>>> FAILURE <<<")
         sys.exit(1)
 
     url = wh_cfg.get("url", "")
     token = wh_cfg.get("token", "")
     device = wh_cfg.get("device", "")
+    language = wh_cfg.get("language", "")
 
     if not url:
         print("  ERROR: url is empty")
-        print("\n>>> FAILURE <<<")
         sys.exit(1)
 
     print(f"  URL: {url}")
     print(f"  Device: {device}")
     print(f"  Token: {token[:8]}***" if len(token) > 8 else f"  Token: {'(empty)' if not token else token}")
+    if language:
+        print(f"  Language: {language}")
 
-    # Create output
-    print("\n[2/3] Creating webhook output...")
-    output = WebhookOutput(url=url, token=token, device=device)
+    base_payload = {"token": token, "device": device}
+    if language:
+        base_payload["language"] = language
 
-    # Send configured alert messages
-    total = len(TEST_SCENARIOS)
-    print(f"\n[3/3] Sending {total} test messages (configured alert phrases)...")
-
-    all_ok = True
-    for i, scenario in enumerate(TEST_SCENARIOS, 1):
-        message = build_message(
-            glucose_value=scenario["glucose_value"],
-            level=scenario["level"],
-            trend_arrow=scenario["trend"],
-            config=config,
-        )
-        print(f"\n  [{i}/{total}] {scenario['level'].upper()} alert:")
-        print(f"    \"{message}\"")
-
-        success = output.send_alert(message, glucose_value=scenario["glucose_value"], level=scenario["level"])
-        if success:
-            print(f"    -> Sent OK")
-        else:
-            print(f"    -> FAILED")
-            all_ok = False
-
-        if i < total:
-            print("    Waiting 5s before next message...")
-            time.sleep(5)
-
-    if all_ok:
-        print("\n" + "=" * 50)
-        print(">>> SUCCESS <<<")
-        print("=" * 50)
-        print(f"\n{total} messages sent to device.")
-        print("Check if Alexa spoke each message!")
+    if custom_message:
+        print(f"\n[2] Sending custom message...")
+        print(f"    Message: \"{custom_message}\"")
+        payload = {**base_payload, "text": custom_message}
+        ok = send_message(url, payload)
     else:
-        print("\n" + "=" * 50)
+        print(f"\n[2] Sending {len(TEST_SCENARIOS)} configured alert phrases...")
+        ok = True
+        for i, scenario in enumerate(TEST_SCENARIOS, 1):
+            message = build_message(
+                glucose_value=scenario["glucose_value"],
+                level=scenario["level"],
+                trend_arrow=scenario["trend"],
+                config=config,
+            )
+            print(f"\n  [{i}/{len(TEST_SCENARIOS)}] {scenario['level'].upper()} alert:")
+            print(f"    Message: \"{message}\"")
+            payload = {**base_payload, "text": message}
+            if not send_message(url, payload):
+                ok = False
+            if i < len(TEST_SCENARIOS):
+                print("    Waiting 5s...")
+                time.sleep(5)
+
+    print("\n" + "=" * 50)
+    if ok:
+        print(">>> SUCCESS <<<")
+    else:
         print(">>> FAILURE <<<")
-        print("=" * 50)
-        print("\nSome messages failed. Check:")
-        print("  - Is the URL correct?")
-        print("  - Is the token valid?")
-        print("  - Is the device name correct in VoiceMonkey?")
+    print("=" * 50)
+
+    if not ok:
         sys.exit(1)
 
 

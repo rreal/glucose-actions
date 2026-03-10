@@ -127,7 +127,8 @@ outputs:
     enabled: true
     url: "https://api-v2.voicemonkey.io/announcement"
     token: "your-voicemonkey-token"
-    device: "your-device"
+    device: "your-device-id"
+    language: "pt-BR"      # pronunciation language (e.g. pt-BR, en-US, es-ES)
 ```
 
 ### Output: WhatsApp (Meta Cloud API)

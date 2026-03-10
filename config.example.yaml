@@ -29,6 +29,7 @@ outputs:
     url: ""                # e.g. https://api-v2.voicemonkey.io/announcement
     token: ""
     device: ""
+    language: "pt-BR"      # language for Alexa TTS pronunciation (e.g. pt-BR, en-US, es-ES)
 
   - type: whatsapp
     enabled: false
