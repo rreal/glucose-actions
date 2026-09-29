@@ -42,20 +42,31 @@ def should_alert(level: str, state: dict, cooldown_minutes: int) -> bool:
     return elapsed > cooldown_minutes * 60
 
 
-def build_message(glucose_value: int, level: str, trend_arrow: str, config: dict | None = None) -> str:
+DEFAULT_TREND_TEXTS = {
+    "DOWN_FAST": "caindo rapido",
+    "DOWN_SLOW": "caindo",
+    "STABLE": "estavel",
+    "UP_SLOW": "subindo",
+    "UP_FAST": "subindo rapido",
+}
+
+
+def build_message(glucose_value: int, level: str, trend_arrow: str, config: dict | None = None,
+                  trend: str = "") -> str:
     """Build alert message using configurable templates from config."""
-    messages = {}
-    if config:
-        messages = config.get("alerts", {}).get("messages", {})
+    alerts_cfg = config.get("alerts", {}) if config else {}
+    messages = alerts_cfg.get("messages", {})
+    trend_texts = {**DEFAULT_TREND_TEXTS, **alerts_cfg.get("trend_texts", {})}
 
     template = messages.get(level, "")
     if not template:
         defaults = {
-            "low": "Atencao: glicose em {value} mg/dL {trend}, nivel baixo",
-            "high": "Atencao: glicose em {value} mg/dL {trend}, nivel alto",
+            "low": "Atencao: glicose em {value} mg/dL {trend} {trend_text}, nivel baixo",
+            "high": "Atencao: glicose em {value} mg/dL {trend} {trend_text}, nivel alto",
         }
-        template = defaults.get(level, "Alert: glucose {value} mg/dL {trend}, level {level}")
+        template = defaults.get(level, "Alert: glucose {value} mg/dL {trend} {trend_text}, level {level}")
 
-    message = template.format(value=glucose_value, trend=trend_arrow, level=level)
+    message = template.format(value=glucose_value, trend=trend_arrow, trend_text=trend_texts.get(trend, ""),
+                              level=level)
     # An empty trend (sensor reports UNKNOWN) would leave stray spaces before punctuation
     return re.sub(r" +([,.!?])", r"\1", re.sub(r" {2,}", " ", message)).strip()

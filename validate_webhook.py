@@ -47,8 +47,8 @@ def send_message(url: str, payload: dict) -> bool:
 
 
 TEST_SCENARIOS = [
-    {"level": "low", "glucose_value": 55, "trend": "↓"},
-    {"level": "high", "glucose_value": 210, "trend": "↑"},
+    {"level": "low", "glucose_value": 55, "trend": "↓", "trend_name": "DOWN_FAST"},
+    {"level": "high", "glucose_value": 210, "trend": "↑", "trend_name": "UP_FAST"},
 ]
 
 
@@ -101,6 +101,7 @@ def main() -> None:
                 level=scenario["level"],
                 trend_arrow=scenario["trend"],
                 config=config,
+                trend=scenario["trend_name"],
             )
             print(f"\n  [{i}/{len(TEST_SCENARIOS)}] {scenario['level'].upper()} alert:")
             print(f"    Message: \"{message}\"")

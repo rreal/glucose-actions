@@ -107,3 +107,28 @@ class TestBuildMessage:
     def test_empty_trend_at_end_of_custom_template(self):
         config = {"alerts": {"messages": {"high": "Glucose {value} {trend}"}}}
         assert build_message(210, "high", "", config) == "Glucose 210"
+
+    def test_default_message_includes_trend_text(self):
+        msg = build_message(65, "low", "↘", None, trend="DOWN_SLOW")
+        assert msg == "Atencao: glicose em 65 mg/dL ↘ caindo, nivel baixo"
+
+    def test_high_default_message_with_fast_rise(self):
+        msg = build_message(210, "high", "↑", None, trend="UP_FAST")
+        assert msg == "Atencao: glicose em 210 mg/dL ↑ subindo rapido, nivel alto"
+
+    def test_unknown_trend_leaves_trend_text_empty(self):
+        msg = build_message(65, "low", "", None, trend="UNKNOWN")
+        assert msg == "Atencao: glicose em 65 mg/dL, nivel baixo"
+
+    def test_trend_texts_overridable_from_config(self):
+        config = {"alerts": {
+            "messages": {"low": "Warning: glucose at {value} mg/dL {trend} {trend_text}, level low"},
+            "trend_texts": {"DOWN_FAST": "falling fast"},
+        }}
+        msg = build_message(55, "low", "↓", config, trend="DOWN_FAST")
+        assert msg == "Warning: glucose at 55 mg/dL ↓ falling fast, level low"
+
+    def test_partial_trend_texts_fall_back_to_defaults(self):
+        config = {"alerts": {"trend_texts": {"DOWN_FAST": "falling fast"}}}
+        msg = build_message(210, "high", "→", config, trend="STABLE")
+        assert msg == "Atencao: glicose em 210 mg/dL → estavel, nivel alto"

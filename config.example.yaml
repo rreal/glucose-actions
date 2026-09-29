@@ -15,13 +15,23 @@ alerts:
   max_reading_age_minutes: 15  # ignore readings older than this
 
   # Alert message templates (optional — defaults to Portuguese)
-  # Available placeholders: {value} = glucose mg/dL, {trend} = trend arrow, {level} = low/high
+  # Available placeholders: {value} = glucose mg/dL, {trend} = trend arrow,
+  # {trend_text} = trend in words (see trend_texts), {level} = low/high
   messages:
-    low: "Atencao: glicose em {value} mg/dL {trend}, nivel baixo"
-    high: "Atencao: glicose em {value} mg/dL {trend}, nivel alto"
+    low: "Atencao: glicose em {value} mg/dL {trend} {trend_text}, nivel baixo"
+    high: "Atencao: glicose em {value} mg/dL {trend} {trend_text}, nivel alto"
     # English example:
-    # low: "Warning: glucose at {value} mg/dL {trend}, level low"
-    # high: "Warning: glucose at {value} mg/dL {trend}, level high"
+    # low: "Warning: glucose at {value} mg/dL {trend} {trend_text}, level low"
+    # high: "Warning: glucose at {value} mg/dL {trend} {trend_text}, level high"
+
+  # Words used for {trend_text} (optional — defaults to Portuguese below).
+  # When the sensor reports no trend, {trend} and {trend_text} are left empty.
+  # trend_texts:
+  #   DOWN_FAST: "caindo rapido"     # English: "falling fast"
+  #   DOWN_SLOW: "caindo"            # "falling"
+  #   STABLE: "estavel"              # "stable"
+  #   UP_SLOW: "subindo"             # "rising"
+  #   UP_FAST: "subindo rapido"      # "rising fast"
 
 outputs:
   - type: webhook

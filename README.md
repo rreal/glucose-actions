@@ -22,7 +22,7 @@ Built for diabetics and their caregivers who want reliable, automated glucose al
   - WhatsApp (Meta Cloud API) *(untested — contributions welcome!)*
 - **State persistence** between executions (atomic JSON writes)
 - **File lock** to prevent overlapping cron executions
-- **Trend data** — trend arrow included in alerts (↓ ↘ → ↗ ↑)
+- **Trend data** — trend arrow (↓ ↘ → ↗ ↑) and trend in words ("caindo", "subindo rapido"...) included in alerts
 
 ## Architecture
 
@@ -97,25 +97,33 @@ alerts:
 
 ### Alert Messages (customizable)
 
-Alert messages are fully configurable via `config.yaml`. Available placeholders: `{value}` (glucose mg/dL), `{trend}` (trend arrow), `{level}` (low/high).
+Alert messages are fully configurable via `config.yaml`. Available placeholders: `{value}` (glucose mg/dL), `{trend}` (trend arrow), `{trend_text}` (trend in words), `{level}` (low/high).
 
 ```yaml
 alerts:
   messages:
     # Portuguese (default)
-    low: "Atencao: glicose em {value} mg/dL {trend}, nivel baixo"
-    high: "Atencao: glicose em {value} mg/dL {trend}, nivel alto"
+    low: "Atencao: glicose em {value} mg/dL {trend} {trend_text}, nivel baixo"
+    high: "Atencao: glicose em {value} mg/dL {trend} {trend_text}, nivel alto"
 
     # English example
-    # low: "Warning: glucose at {value} mg/dL {trend}, level low"
-    # high: "Warning: glucose at {value} mg/dL {trend}, level high"
+    # low: "Warning: glucose at {value} mg/dL {trend} {trend_text}, level low"
+    # high: "Warning: glucose at {value} mg/dL {trend} {trend_text}, level high"
 
     # Spanish example
-    # low: "Atencion: glucosa en {value} mg/dL {trend}, nivel bajo"
-    # high: "Atencion: glucosa en {value} mg/dL {trend}, nivel alto"
+    # low: "Atencion: glucosa en {value} mg/dL {trend} {trend_text}, nivel bajo"
+    # high: "Atencion: glucosa en {value} mg/dL {trend} {trend_text}, nivel alto"
+
+  # Words for {trend_text} — override when using another language
+  trend_texts:
+    DOWN_FAST: "falling fast"
+    DOWN_SLOW: "falling"
+    STABLE: "stable"
+    UP_SLOW: "rising"
+    UP_FAST: "rising fast"
 ```
 
-If no messages are configured, defaults to Portuguese.
+If no messages or trend texts are configured, defaults to Portuguese. When the sensor reports no trend, `{trend}` and `{trend_text}` are left empty.
 
 ### Output: Webhook (Alexa/VoiceMonkey)
 

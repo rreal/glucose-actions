@@ -180,7 +180,7 @@ def main() -> None:
             sys.exit(0)
 
         # Build message and send
-        message = build_message(glucose_value, level, trend_arrow, config)
+        message = build_message(glucose_value, level, trend_arrow, config, trend=reading["trend"])
         outputs = build_outputs(config)
 
         if not outputs:
