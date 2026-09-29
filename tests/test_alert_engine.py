@@ -99,3 +99,11 @@ class TestBuildMessage:
         config = {"alerts": {"messages": {"low": "Custom low {value}"}}}
         msg = build_message(210, "high", "↑", config)
         assert msg == "Atencao: glicose em 210 mg/dL ↑, nivel alto"
+
+    def test_empty_trend_leaves_no_stray_spaces(self):
+        msg = build_message(65, "low", "", None)
+        assert msg == "Atencao: glicose em 65 mg/dL, nivel baixo"
+
+    def test_empty_trend_at_end_of_custom_template(self):
+        config = {"alerts": {"messages": {"high": "Glucose {value} {trend}"}}}
+        assert build_message(210, "high", "", config) == "Glucose 210"

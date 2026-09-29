@@ -1,5 +1,6 @@
 """Alert logic: threshold evaluation, cooldown, stale detection, message building."""
 
+import re
 from datetime import datetime, timezone
 
 
@@ -55,4 +56,6 @@ def build_message(glucose_value: int, level: str, trend_arrow: str, config: dict
         }
         template = defaults.get(level, "Alert: glucose {value} mg/dL {trend}, level {level}")
 
-    return template.format(value=glucose_value, trend=trend_arrow, level=level)
+    message = template.format(value=glucose_value, trend=trend_arrow, level=level)
+    # An empty trend (sensor reports UNKNOWN) would leave stray spaces before punctuation
+    return re.sub(r" +([,.!?])", r"\1", re.sub(r" {2,}", " ", message)).strip()

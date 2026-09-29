@@ -4,6 +4,7 @@ import logging
 import os
 
 from pylibrelinkup import PyLibreLinkUp
+from pylibrelinkup.models.data import Trend
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +35,7 @@ def read_glucose(config: dict) -> dict | None:
             "value": int(latest.value),
             "timestamp": latest.factory_timestamp,
             "trend": latest.trend.name,
-            "trend_arrow": latest.trend.indicator,
+            "trend_arrow": "" if latest.trend == Trend.UNKNOWN else latest.trend.indicator,
             "is_high": latest.is_high,
             "is_low": latest.is_low,
         }

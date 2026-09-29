@@ -1,4 +1,4 @@
-pylibrelinkup
+pylibrelinkup>=0.11.1
 PyYAML
 requests
 pytest
