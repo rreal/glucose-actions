@@ -49,9 +49,29 @@ outputs:
     template_name: "glucose_alert"  # approved template with one body parameter {{1}}
     language_code: "pt_BR"
 
+# Daily summary sent once a day by a separate cron entry (python -m src.daily_summary), e.g. at 21:00.
+# Reports today's time in range and hours that were often high/low in the last days.
+daily_summary:
+  enabled: false
+  goal_percent: 80         # time in range (low_threshold..high_threshold) considered a good day
+  pattern_days: 7          # look-back window for recurring high/low hours
+  pattern_min_days: 3      # an hour is "recurring" when out of range on at least this many days
+  min_readings: 16         # below this many readings today (~4h), time in range is not reported
+  outputs: ["webhook"]     # output types that receive the summary (omit to use all enabled outputs)
+  # Message templates (optional — defaults to Portuguese). Placeholders: {tir} = today's % in range,
+  # {goal}, {low}, {high}, {days}, {hours} = spoken hours (e.g. "por volta das 15h")
+  # messages:
+  #   good: "Parabéns! Hoje a glicose ficou {tir}% do tempo na faixa ideal. Foi um ótimo dia, continue assim!"
+  #   improve_high: "..."   # below goal, mostly above high_threshold
+  #   improve_low: "..."    # below goal, mostly below low_threshold
+  #   pattern_high: "Nos últimos {days} dias, a glicose costumou subir {hours}. Vale uma atenção especial nesses horários."
+  #   pattern_low: "..."
+  #   no_data: "..."
+
 logging:
   level: "INFO"            # DEBUG, INFO, WARNING, ERROR
   file: ""                 # empty = stdout only
 
 state_file: "state.json"
+history_file: "history.json"   # accumulated readings for the daily summary (kept 14 days)
 lock_file: "/tmp/glucose-actions.lock"

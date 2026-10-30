@@ -125,6 +125,29 @@ alerts:
 
 If no messages or trend texts are configured, defaults to Portuguese. When the sensor reports no trend, `{trend}` and `{trend_text}` are left empty.
 
+### Daily Summary
+
+A separate daily job (`python -m src.daily_summary`, e.g. at 21:00) sends one encouraging message with:
+
+- **Today's time in range** (`low_threshold`..`high_threshold`): congratulates when it reaches `goal_percent`, otherwise gives a gentle tip based on whether the day was mostly high or mostly low.
+- **Recurring hours**: hours of the day that were high or low on at least `pattern_min_days` of the last `pattern_days` days, so extra care can be taken at those times.
+
+LibreLinkUp's graph only returns ~12 hours, so each `src.main` run accumulates readings in `history.json` (kept 14 days). Recurring hours also use the LibreLinkUp logbook (~14 days of high/low events), so patterns are available from the first day.
+
+```yaml
+daily_summary:
+  enabled: true
+  goal_percent: 80
+  pattern_days: 7
+  pattern_min_days: 3
+  min_readings: 16         # skip time in range if today has fewer readings
+  outputs: ["webhook"]     # omit to send to all enabled outputs
+```
+
+Example: *"Parabéns! Hoje a glicose ficou 85% do tempo na faixa ideal. Foi um ótimo dia, continue assim! Nos últimos 7 dias, a glicose costumou subir por volta das 14h. Vale uma atenção especial nesses horários."*
+
+Preview without sending: `python -m src.daily_summary --dry-run`. Templates can be overridden under `daily_summary.messages` (see `config.example.yaml`).
+
 ### Output: Webhook (Alexa/VoiceMonkey)
 
 See the full setup guide: **[VoiceMonkey Setup](docs/voicemonkey-setup.md)**
@@ -206,6 +229,9 @@ Add one of the following lines (adjust the path to your installation):
 
 # With env vars for credentials (instead of config.yaml)
 */5 * * * * cd /path/to/glucose-actions && LIBRELINKUP_EMAIL="your@email.com" LIBRELINKUP_PASSWORD="yourpass" WHATSAPP_ACCESS_TOKEN="your-token" .venv/bin/python -m src.main >> /var/log/glucose-actions.log 2>&1
+
+# Daily summary at 21:00 (requires daily_summary.enabled: true)
+0 21 * * * cd /path/to/glucose-actions && .venv/bin/python -m src.daily_summary >> /var/log/glucose-actions.log 2>&1
 ```
 
 > **Note:** The file lock mechanism prevents overlapping runs. If a previous execution is still running when cron triggers the next one, it will exit gracefully.
@@ -235,6 +261,9 @@ glucose-actions/
 │   ├── main.py                # Entry point — orchestrates read → evaluate → alert
 │   ├── glucose_reader.py      # Glucose reading via pylibrelinkup
 │   ├── alert_engine.py        # Threshold evaluation + cooldown + messages
+│   ├── daily_summary.py       # Daily summary entry point (separate cron)
+│   ├── summary_engine.py      # Time in range + recurring hours + summary messages
+│   ├── history.py             # Accumulated readings for the daily summary
 │   ├── state.py               # State persistence (atomic JSON)
 │   └── outputs/
 │       ├── __init__.py
@@ -247,6 +276,7 @@ glucose-actions/
 │   ├── test_state.py          # State persistence tests
 │   └── test_whatsapp_output.py # WhatsApp output tests
 ├── state.json                 # State between executions (not committed)
+├── history.json               # Accumulated readings, 14 days (not committed)
 ├── LICENSE                    # MIT License
 ├── CONTRIBUTING.md            # Contribution guidelines
 └── .gitignore

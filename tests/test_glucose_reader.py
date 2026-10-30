@@ -1,5 +1,7 @@
 """Unit tests for glucose reader."""
 
+from datetime import datetime
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from pylibrelinkup.models.data import GlucoseMeasurementWithTrend
@@ -24,11 +26,11 @@ def make_measurement(trend_arrow: int) -> GlucoseMeasurementWithTrend:
     })
 
 
-def read_with(measurement: GlucoseMeasurementWithTrend) -> dict | None:
+def read_with(measurement: GlucoseMeasurementWithTrend, history: list | None = None) -> dict | None:
     with patch("src.glucose_reader.PyLibreLinkUp") as client_cls:
         client = client_cls.return_value
         client.get_patients.return_value = [object()]
-        client.latest.return_value = measurement
+        client.read.return_value = SimpleNamespace(current=measurement, history=history or [])
         return read_glucose(CONFIG)
 
 
@@ -43,3 +45,8 @@ class TestReadGlucose:
         assert reading["value"] == 65
         assert reading["trend"] == "UNKNOWN"
         assert reading["trend_arrow"] == ""
+
+    def test_history_uses_local_timestamps_and_includes_latest(self):
+        older = make_measurement(3).model_copy(update={"timestamp": datetime(2026, 9, 29, 6, 45), "value": 80.0})
+        reading = read_with(make_measurement(3), history=[older])
+        assert reading["history"] == [(datetime(2026, 9, 29, 6, 45), 80), (datetime(2026, 9, 29, 7, 0), 65)]

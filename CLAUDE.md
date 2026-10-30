@@ -15,6 +15,10 @@ cron → src/main.py (orchestrator)
                ├── base.py            → BaseOutput (ABC)
                ├── webhook.py         → Alexa/VoiceMonkey HTTP POST
                └── whatsapp.py        → WhatsApp Cloud API (template messages)
+
+cron 21:00 → src/daily_summary.py
+         ├── src/history.py           → accumulated readings (history.json, 14 days)
+         └── src/summary_engine.py    → time in range + recurring high/low hours + messages
 ```
 
 **Flow:** read glucose → check if stale → evaluate thresholds → check cooldown → build message → send via enabled outputs → persist state.
@@ -22,6 +26,7 @@ cron → src/main.py (orchestrator)
 ## Commands
 
 - **Run:** `python -m src.main` (from project root, with `.venv` activated)
+- **Daily summary preview:** `python -m src.daily_summary --dry-run`
 - **Tests:** `pytest tests/ -v`
 - **Validate connections:** `python validate_lib.py`, `python validate_webhook.py`, `python validate_whatsapp.py`
 
@@ -41,6 +46,7 @@ cron → src/main.py (orchestrator)
 - `config.yaml` — runtime config with credentials (**never commit**, in `.gitignore`)
 - `config.example.yaml` — config template for new users
 - `state.json` — alert state between executions (**never commit**)
+- `history.json` — accumulated readings + last summary date (**never commit**)
 - `requirements.txt` — dependencies: pylibrelinkup, PyYAML, requests, pytest
 
 ## Security

@@ -13,6 +13,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 from src.alert_engine import build_message, evaluate, is_stale, should_alert
 from src.glucose_reader import read_glucose
+from src.history import merge_readings
 from src.outputs.webhook import WebhookOutput
 from src.outputs.whatsapp import WhatsAppOutput
 from src.state import load_state, save_state
@@ -74,13 +75,15 @@ def configure_logging(config: dict) -> None:
     root.addHandler(handler)
 
 
-def build_outputs(config: dict) -> list:
-    """Instantiate enabled output objects from config."""
+def build_outputs(config: dict, types: list[str] | None = None) -> list:
+    """Instantiate enabled output objects from config, optionally restricted to the given output types."""
     outputs = []
     for out_cfg in config.get("outputs", []):
         if not out_cfg.get("enabled", False):
             continue
         out_type = out_cfg.get("type")
+        if types is not None and out_type not in types:
+            continue
         if out_type == "webhook":
             outputs.append(WebhookOutput(
                 url=out_cfg["url"],
@@ -102,8 +105,7 @@ def build_outputs(config: dict) -> list:
     return outputs
 
 
-def main() -> None:
-    # Load config
+def load_config() -> dict:
     config_path = PROJECT_ROOT / "config.yaml"
     try:
         with open(config_path) as f:
@@ -115,8 +117,15 @@ def main() -> None:
     if config is None:
         print("ERROR: config.yaml is empty", file=sys.stderr)
         sys.exit(1)
+    return config
 
-    # Configure logging
+
+def resolve_path(path: str) -> str:
+    return path if os.path.isabs(path) else str(PROJECT_ROOT / path)
+
+
+def main() -> None:
+    config = load_config()
     configure_logging(config)
 
     # Validate config
@@ -126,9 +135,7 @@ def main() -> None:
         sys.exit(1)
 
     # Acquire file lock
-    lock_path = config.get("lock_file", "/tmp/glucose-actions.lock")
-    if not os.path.isabs(lock_path):
-        lock_path = str(PROJECT_ROOT / lock_path)
+    lock_path = resolve_path(config.get("lock_file", "/tmp/glucose-actions.lock"))
     try:
         lock_fd = open(lock_path, "w")
         fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -138,9 +145,7 @@ def main() -> None:
 
     try:
         # Load state
-        state_path = config.get("state_file", "state.json")
-        if not os.path.isabs(state_path):
-            state_path = str(PROJECT_ROOT / state_path)
+        state_path = resolve_path(config.get("state_file", "state.json"))
         state = load_state(state_path)
 
         # Read glucose
@@ -154,6 +159,13 @@ def main() -> None:
         trend_arrow = reading["trend_arrow"]
 
         logger.info("Glucose: %d mg/dL %s (%s)", glucose_value, trend_arrow, timestamp)
+
+        # Accumulate history for the daily summary; never let it block alerts
+        history_path = resolve_path(config.get("history_file", "history.json"))
+        try:
+            save_state(history_path, merge_readings(load_state(history_path), reading["history"], datetime.now()))
+        except OSError as e:
+            logger.error("Failed to save glucose history: %s", e)
 
         # Check stale
         max_age = config["alerts"]["max_reading_age_minutes"]
